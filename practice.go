@@ -27,7 +27,13 @@ var practiceCmd = &cobra.Command{
 
 		startTime := time.Now()
 		input, _ := reader.ReadString('\n')
+		if input == "" {
+			fmt.Println("You didn't type anything!")
+			return
+		}
+		
 		duration := time.Since(startTime)
+
 
 		input = strings.TrimSpace(input)
 		accuracy := calculateAccuracy(sentence, input)
