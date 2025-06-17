@@ -44,6 +44,20 @@ var practiceCmd = &cobra.Command{
 		fmt.Printf("Accuracy: %.2f%%\n", accuracy)
 		fmt.Printf("WPM: %.2f\n", wpm)
 
+		fmt.Println("You typed: ")
+		minLen := min(len(sentence), len(input))
+		for i := 0; i < minLen; i++ {
+			if (sentence[i] != input[i]) {
+				fmt.Printf("\033[31m%c\033[0m", input[i])
+			} else {
+				fmt.Printf("%c", input[i])
+			}
+		}
+		if len(input) > len(sentence) {
+			fmt.Printf("\033[31m%c\033[0m", input[len(sentence)])
+		}
+		fmt.Println()
+
 	},
 }
 
