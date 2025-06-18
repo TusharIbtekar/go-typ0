@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -25,15 +26,17 @@ var practiceCmd = &cobra.Command{
 	},
 }
 
-var sentence = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog"
+var sentence = "The quick brown fox jumps over the lazy dog" 
 type model struct {
 	input string
 	startTime time.Time
 	finished bool
+	mistyped map[rune]int
 }
 
 func (m *model) Init() tea.Cmd {
 	m.startTime = time.Now()
+	m.mistyped = make(map[rune]int)
 	return nil
 }
 
@@ -58,7 +61,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		default:
 			if len(msg.String()) == 1 && len(m.input) < len(sentence) {
-				m.input += msg.String()
+				typed := msg.String()
+				expected := string(sentence[len(m.input)])
+				if typed != expected {
+					m.mistyped[rune(expected[0])]++
+				}
+				m.input += typed
 			}
 	}
 	}
@@ -104,12 +112,45 @@ func (m *model) View() string {
 			"\nTime: %.2f seconds | WPM: %.2f | Accuracy: %.2f%%\n", 
 			duration.Seconds(), wpm, accuracy,
 		)
+
+		// mistypes section
+		if len(m.mistyped) > 0 {
+			stats += "\nMost mistyped keys: "
+
+			type kv struct {k rune; v int}
+			var sorted []kv
+			for k, v := range m.mistyped {
+				sorted = append(sorted, kv{k, v})
+			}
+			sort.Slice(sorted, func(i, j int) bool { return sorted[i].v > sorted[j].v})
+			for i, pair := range sorted {
+				if i >= 5 {
+					break
+				}
+				stats += fmt.Sprintf("%q(%d) ", pair.k, pair.v)
+			}
+		}
 	} else {
 		stats = "\nPress Enter when done. ESC/CTRL+C to quit"
 	}
 
 
 	return sentenceBox + "\n\n" + inputBox + stats
+}
+
+func mistypedKeys(original, input string) map[rune]int {
+	mistypes := make(map[rune]int)
+	minLen := min(len(original), len(input))
+	for i := 0; i < minLen; i++ {
+		if original[i] != input[i] {
+			mistypes[rune(original[i])]++
+		}
+	}
+
+	for i := minLen; i < len(original); i++ {
+		mistypes[rune(original[i])]++
+	}
+	return mistypes
 }
 
 func calculateAccuracy(original, input string) float64 {
