@@ -25,7 +25,7 @@ var practiceCmd = &cobra.Command{
 	},
 }
 
-var sentence = "The quick brown fox jumps over the lazy dog"
+var sentence = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog"
 type model struct {
 	input string
 	startTime time.Time
@@ -85,13 +85,15 @@ func (m *model) View() string {
 			sentenceView += string(sentence[i])
 		}
 	}
-	sentenceBox := boxStyle.Render(sentenceView)
+	contentWidth := lipgloss.Width(sentence) + 5
+	sentenceBox := boxStyle.Width(contentWidth).Render(sentenceView)
 
 	cursor := " "
 	if !m.finished && time.Now().UnixNano()/500000000%2 == 0 {
 		cursor = "_"
 	}
-	inputBox := boxStyle.Render(m.input + cursor)
+	inputContent := m.input + cursor
+	inputBox := boxStyle.Width(contentWidth).Render(inputContent)
 
 	stats := ""
 	if m.finished {
