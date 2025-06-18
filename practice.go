@@ -42,8 +42,18 @@ func (m *model) Init() tea.Cmd {
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.finished {
-		if key, ok := msg.(tea.KeyMsg); ok && (key.Type == tea.KeyCtrlC || key.Type == tea.KeyEsc) {
-			return m, tea.Quit
+		if key, ok := msg.(tea.KeyMsg); ok {
+			switch key.Type {
+				case tea.KeyCtrlC, tea.KeyEsc:
+					return m, tea.Quit
+				case tea.KeyEnter: 
+					m.input = ""
+					m.startTime = time.Now()
+					m.finished = false
+					m.mistyped = make(map[rune]int)
+					return m, nil
+			}
+
 		}
 		return m, nil
 	}
@@ -67,6 +77,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.mistyped[rune(expected[0])]++
 				}
 				m.input += typed
+				
+				if len(m.input) == len(sentence) {
+					m.finished = true
+				}
 			}
 	}
 	}
@@ -142,6 +156,7 @@ func (m *model) View() string {
 			statsLines = append(statsLines, labelStyle.Render("Mistypes: "))
 			statsLines = append(statsLines, mistypedStr)
 		}
+		statsLines = append(statsLines, labelStyle.Render("Press Enter to restart. ESC/CTRL+C to quit"))
 		stats = statsBoxStyle.Render(strings.Join(statsLines, "\n"))
 	} else {
 		stats = "\nPress Enter when done. ESC/CTRL+C to quit"
