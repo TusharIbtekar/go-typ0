@@ -79,6 +79,11 @@ func (m *model) View() string {
 	red := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 	underline := lipgloss.NewStyle().Underline(true)
 
+	statsBoxStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1, 2).MarginTop(1)
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Bold(true)
+	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true)
+	mistypedKeyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
+
 	var sentenceView string
 	for i := 0; i < len(sentence); i++ {
 		if i < len(m.input) {
@@ -108,50 +113,44 @@ func (m *model) View() string {
 		duration := time.Since(m.startTime)
 		accuracy := calculateAccuracy(sentence, m.input)
 		wpm := calculateWPM(len(m.input), duration)
-		stats = fmt.Sprintf(
-			"\nTime: %.2f seconds | WPM: %.2f | Accuracy: %.2f%%\n", 
-			duration.Seconds(), wpm, accuracy,
-		)
+		// stats = fmt.Sprintf(
+		// 	"\nTime: %.2f seconds | WPM: %.2f | Accuracy: %.2f%%\n", 
+		// 	duration.Seconds(), wpm, accuracy,
+		// )
+
+		statsLines := []string {
+			fmt.Sprintf("%s %s", labelStyle.Render("Time:"), valueStyle.Render(fmt.Sprintf("%.2f seconds", duration.Seconds()))),
+			fmt.Sprintf("%s %s", labelStyle.Render("WPM:"), valueStyle.Render(fmt.Sprintf("%.2f", wpm))),
+			fmt.Sprintf("%s %s", labelStyle.Render("Accuracy:"), valueStyle.Render(fmt.Sprintf("%.2f%%", accuracy))),
+		}
 
 		// mistypes section
 		if len(m.mistyped) > 0 {
-			stats += "\nMost mistyped keys: "
-
 			type kv struct {k rune; v int}
 			var sorted []kv
 			for k, v := range m.mistyped {
 				sorted = append(sorted, kv{k, v})
 			}
 			sort.Slice(sorted, func(i, j int) bool { return sorted[i].v > sorted[j].v})
+			mistypedStr := ""
 			for i, pair := range sorted {
 				if i >= 5 {
 					break
 				}
-				stats += fmt.Sprintf("%q(%d) ", pair.k, pair.v)
+				mistypedStr += fmt.Sprintf("- %s %s\n", mistypedKeyStyle.Render(fmt.Sprintf("%q", pair.k)), valueStyle.Render(fmt.Sprintf("%d", pair.v)))
 			}
+			statsLines = append(statsLines, labelStyle.Render("Mistypes: "))
+			statsLines = append(statsLines, mistypedStr)
 		}
+		stats = statsBoxStyle.Render(strings.Join(statsLines, "\n"))
 	} else {
 		stats = "\nPress Enter when done. ESC/CTRL+C to quit"
 	}
 
 
-	return sentenceBox + "\n\n" + inputBox + stats
+	return sentenceBox + "\n\n" + inputBox + "\n" + stats
 }
 
-func mistypedKeys(original, input string) map[rune]int {
-	mistypes := make(map[rune]int)
-	minLen := min(len(original), len(input))
-	for i := 0; i < minLen; i++ {
-		if original[i] != input[i] {
-			mistypes[rune(original[i])]++
-		}
-	}
-
-	for i := minLen; i < len(original); i++ {
-		mistypes[rune(original[i])]++
-	}
-	return mistypes
-}
 
 func calculateAccuracy(original, input string) float64 {
 	original = strings.TrimSpace(original)
