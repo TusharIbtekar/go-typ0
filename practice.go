@@ -1,64 +1,113 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+
 	"github.com/spf13/cobra"
 )
+
 
 var practiceCmd = &cobra.Command{
 	Use: "practice",
 
-
 	Run: func(cmd *cobra.Command, args []string) {
-		sentence := "The quick brown fox jumps over the lazy dog"
-		fmt.Println("Type the following")
-		fmt.Println(sentence)
-		fmt.Println("Press Enter to start")
-
-		reader := bufio.NewReader(os.Stdin)
-		reader.ReadString('\n')
-
-		fmt.Println("Start typing! Press Enter when done")
-
-		startTime := time.Now()
-		input, _ := reader.ReadString('\n')
-		if input == "" {
-			fmt.Println("You didn't type anything!")
-			return
+		p := tea.NewProgram(&model{})
+		if _, err := p.Run(); err != nil {
+			fmt.Println("Error running program: ", err)
+			os.Exit(1)
 		}
-		
-		duration := time.Since(startTime)
-
-
-		input = strings.TrimSpace(input)
-		accuracy := calculateAccuracy(sentence, input)
-		wpm := calculateWPM(len(sentence), duration)
-
-		fmt.Printf("Results:\n")
-		fmt.Printf("Time: %.2f seconds\n", duration.Seconds())
-		fmt.Printf("Accuracy: %.2f%%\n", accuracy)
-		fmt.Printf("WPM: %.2f\n", wpm)
-
-		fmt.Println("You typed: ")
-		minLen := min(len(sentence), len(input))
-		for i := 0; i < minLen; i++ {
-			if (sentence[i] != input[i]) {
-				fmt.Printf("\033[31m%c\033[0m", input[i])
-			} else {
-				fmt.Printf("%c", input[i])
-			}
-		}
-		if len(input) > len(sentence) {
-			fmt.Printf("\033[31m%c\033[0m", input[len(sentence)])
-		}
-		fmt.Println()
-
 	},
+}
+
+var sentence = "The quick brown fox jumps over the lazy dog"
+type model struct {
+	input string
+	startTime time.Time
+	finished bool
+}
+
+func (m *model) Init() tea.Cmd {
+	m.startTime = time.Now()
+	return nil
+}
+
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.finished {
+		if key, ok := msg.(tea.KeyMsg); ok && (key.Type == tea.KeyCtrlC || key.Type == tea.KeyEsc) {
+			return m, tea.Quit
+		}
+		return m, nil
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg: 
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc: 
+			return m, tea.Quit
+		case tea.KeyEnter:
+			m.finished = true
+			return m, nil
+		case tea.KeyBackspace:
+			if len(m.input) > 0 {
+				m.input = m.input[:len(m.input)-1]
+			}
+		default:
+			if len(msg.String()) == 1 && len(m.input) < len(sentence) {
+				m.input += msg.String()
+			}
+	}
+	}
+	return m, nil
+}
+
+func (m *model) View() string {
+	boxStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(1, 2)
+	green := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	red := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+	underline := lipgloss.NewStyle().Underline(true)
+
+	var sentenceView string
+	for i := 0; i < len(sentence); i++ {
+		if i < len(m.input) {
+			if m.input[i] == sentence[i] {
+				sentenceView += green.Render(string(sentence[i]))
+			} else {
+				sentenceView += red.Render(string(sentence[i]))
+			}
+		} else if i == len(m.input) && !m.finished {
+			sentenceView += underline.Render(string(sentence[i]))
+		} else {
+			sentenceView += string(sentence[i])
+		}
+	}
+	sentenceBox := boxStyle.Render(sentenceView)
+
+	cursor := " "
+	if !m.finished && time.Now().UnixNano()/500000000%2 == 0 {
+		cursor = "_"
+	}
+	inputBox := boxStyle.Render(m.input + cursor)
+
+	stats := ""
+	if m.finished {
+		duration := time.Since(m.startTime)
+		accuracy := calculateAccuracy(sentence, m.input)
+		wpm := calculateWPM(len(m.input), duration)
+		stats = fmt.Sprintf(
+			"\nTime: %.2f seconds | WPM: %.2f | Accuracy: %.2f%%\n", 
+			duration.Seconds(), wpm, accuracy,
+		)
+	} else {
+		stats = "\nPress Enter when done. ESC/CTRL+C to quit"
+	}
+
+
+	return sentenceBox + "\n\n" + inputBox + stats
 }
 
 func calculateAccuracy(original, input string) float64 {
@@ -83,7 +132,6 @@ func calculateWPM(charCount int, duration time.Duration) float64 {
 	words := float64(charCount) / 5.0
 	minutes := duration.Minutes()
 
-	fmt.Printf("DEBUG: charCount=%d, words=%.2f, minutes=%.4f\n", charCount, words, minutes)
 
 	if minutes == 0 {
 		return 0
