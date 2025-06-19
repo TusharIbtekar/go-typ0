@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"sort"
 	"strings"
@@ -13,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
+var wordCount int
 var practiceCmd = &cobra.Command{
 	Use: "practice",
 
@@ -26,17 +27,22 @@ var practiceCmd = &cobra.Command{
 	},
 }
 
-var sentence = "The quick brown fox jumps over the lazy dog" 
+func init() {
+	practiceCmd.Flags().IntVarP(&wordCount, "words", "w", 20, "Number of words in the sentence")
+}
+
 type model struct {
 	input string
 	startTime time.Time
 	finished bool
 	mistyped map[rune]int
+	sentence string
 }
 
 func (m *model) Init() tea.Cmd {
 	m.startTime = time.Now()
 	m.mistyped = make(map[rune]int)
+	m.sentence = generateRandomSentence(wordCount)
 	return nil
 }
 
@@ -51,6 +57,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.startTime = time.Now()
 					m.finished = false
 					m.mistyped = make(map[rune]int)
+					m.sentence = generateRandomSentence(wordCount)
 					return m, nil
 			}
 
@@ -70,15 +77,20 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.input = m.input[:len(m.input)-1]
 			}
 		default:
-			if len(msg.String()) == 1 && len(m.input) < len(sentence) {
+			if len(msg.String()) == 1 && len(m.input) < len(m.sentence) {
 				typed := msg.String()
-				expected := string(sentence[len(m.input)])
-				if typed != expected {
-					m.mistyped[rune(expected[0])]++
-				}
-				m.input += typed
+				expected := string(m.sentence[len(m.input)])
 				
-				if len(m.input) == len(sentence) {
+				if expected == "\n" {
+					m.input += expected
+				} else if typed != expected {
+					m.mistyped[rune(expected[0])]++
+					m.input += typed
+				} else {
+					m.input += typed
+				}
+				
+				if len(m.input) == len(m.sentence) {
 					m.finished = true
 				}
 			}
@@ -99,20 +111,20 @@ func (m *model) View() string {
 	mistypedKeyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
 
 	var sentenceView string
-	for i := 0; i < len(sentence); i++ {
+	for i := 0; i < len(m.sentence); i++ {
 		if i < len(m.input) {
-			if m.input[i] == sentence[i] {
-				sentenceView += green.Render(string(sentence[i]))
+			if m.input[i] == m.sentence[i] {
+				sentenceView += green.Render(string(m.sentence[i]))
 			} else {
-				sentenceView += red.Render(string(sentence[i]))
+				sentenceView += red.Render(string(m.sentence[i]))
 			}
 		} else if i == len(m.input) && !m.finished {
-			sentenceView += underline.Render(string(sentence[i]))
+			sentenceView += underline.Render(string(m.sentence[i]))
 		} else {
-			sentenceView += string(sentence[i])
+			sentenceView += string(m.sentence[i])
 		}
 	}
-	contentWidth := lipgloss.Width(sentence) + 5
+	contentWidth := lipgloss.Width(m.sentence) + 5
 	sentenceBox := boxStyle.Width(contentWidth).Render(sentenceView)
 
 	cursor := " "
@@ -125,12 +137,9 @@ func (m *model) View() string {
 	stats := ""
 	if m.finished {
 		duration := time.Since(m.startTime)
-		accuracy := calculateAccuracy(sentence, m.input)
+		accuracy := calculateAccuracy(m.sentence, m.input)
 		wpm := calculateWPM(len(m.input), duration)
-		// stats = fmt.Sprintf(
-		// 	"\nTime: %.2f seconds | WPM: %.2f | Accuracy: %.2f%%\n", 
-		// 	duration.Seconds(), wpm, accuracy,
-		// )
+
 
 		statsLines := []string {
 			fmt.Sprintf("%s %s", labelStyle.Render("Time:"), valueStyle.Render(fmt.Sprintf("%.2f seconds", duration.Seconds()))),
@@ -195,4 +204,45 @@ func calculateWPM(charCount int, duration time.Duration) float64 {
 	}
 	
 	return words / minutes
+}
+
+func generateRandomSentence(wordCount int) string {
+	if wordCount <= 0 {
+		wordCount = 20
+	}
+	
+	var sentence []string
+	for i := 0; i < wordCount; i++ {
+		randomIndex := rand.Intn(len(words))
+		sentence = append(sentence, words[randomIndex])
+	}
+	
+	fullSentence := strings.Join(sentence, " ")
+	return wrapText(fullSentence, 80)
+}
+
+func wrapText(text string, maxWidth int) string {
+	words := strings.Fields(text)
+	var lines []string
+	currentLine := ""
+	
+	for _, word := range words {
+		if len(currentLine)+len(word)+1 <= maxWidth {
+			if currentLine != "" {
+				currentLine += " " + word
+			} else {
+				currentLine = word
+			}
+		} else {
+			if currentLine != "" {
+				lines = append(lines, currentLine)
+			}
+			currentLine = word
+		}
+	}
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+	
+	return strings.Join(lines, "\n")
 }
