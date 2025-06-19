@@ -81,6 +81,8 @@ typ0 race --help
 - **Stats Section**: Displays results and mistype analysis
 - **Centered Layout**: Automatically adapts to your terminal size
 
+<img width="500" alt="SCR-20250619-uaow" src="https://github.com/user-attachments/assets/5c957927-47f1-4ea9-a988-c5208053f9bd" />
+
 ## Understanding Results
 
 - **WPM (Words Per Minute)**: Your typing speed
