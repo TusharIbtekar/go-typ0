@@ -39,9 +39,6 @@ brews:
     commit_author:
       name: github-actions[bot]
       email: github-actions[bot]@users.noreply.github.com
-    folder: Formula
-    homepage_install: |
-      brew install TusharIbtekar/go-typ0/typ0
 
 checksum:
   name_template: "checksums.txt"
