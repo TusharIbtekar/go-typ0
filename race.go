@@ -15,9 +15,10 @@ import (
 )
 
 var wordCount int
-var practiceCmd = &cobra.Command{
-	Use: "practice",
-
+var raceCmd = &cobra.Command{
+	Use: "race",
+	Short: "Start a typing race",
+	Long:  `Start a typing race with random sentences. Race against time to improve your typing speed!`,
 	Run: func(cmd *cobra.Command, args []string) {
 		p := tea.NewProgram(&model{})
 		if _, err := p.Run(); err != nil {
@@ -28,7 +29,7 @@ var practiceCmd = &cobra.Command{
 }
 
 func init() {
-	practiceCmd.Flags().IntVarP(&wordCount, "words", "w", 20, "Number of words in the sentence")
+	raceCmd.Flags().IntVarP(&wordCount, "words", "w", 20, "Number of words in the sentence")
 }
 
 type model struct {
@@ -37,16 +38,25 @@ type model struct {
 	finished bool
 	mistyped map[rune]int
 	sentence string
+	width  int
+	height int
 }
 
 func (m *model) Init() tea.Cmd {
 	m.startTime = time.Now()
 	m.mistyped = make(map[rune]int)
 	m.sentence = generateRandomSentence(wordCount)
-	return nil
+	return tea.EnterAltScreen
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+	}
+
 	if m.finished {
 		if key, ok := msg.(tea.KeyMsg); ok {
 			switch key.Type {
@@ -140,8 +150,7 @@ func (m *model) View() string {
 		accuracy := calculateAccuracy(m.sentence, m.input)
 		wpm := calculateWPM(len(m.input), duration)
 
-
-		statsLines := []string {
+		statsLines := []string{
 			fmt.Sprintf("%s %s", labelStyle.Render("Time:"), valueStyle.Render(fmt.Sprintf("%.2f seconds", duration.Seconds()))),
 			fmt.Sprintf("%s %s", labelStyle.Render("WPM:"), valueStyle.Render(fmt.Sprintf("%.2f", wpm))),
 			fmt.Sprintf("%s %s", labelStyle.Render("Accuracy:"), valueStyle.Render(fmt.Sprintf("%.2f%%", accuracy))),
@@ -149,12 +158,15 @@ func (m *model) View() string {
 
 		// mistypes section
 		if len(m.mistyped) > 0 {
-			type kv struct {k rune; v int}
+			type kv struct {
+				k rune
+				v int
+			}
 			var sorted []kv
 			for k, v := range m.mistyped {
 				sorted = append(sorted, kv{k, v})
 			}
-			sort.Slice(sorted, func(i, j int) bool { return sorted[i].v > sorted[j].v})
+			sort.Slice(sorted, func(i, j int) bool { return sorted[i].v > sorted[j].v })
 			mistypedStr := ""
 			for i, pair := range sorted {
 				if i >= 5 {
@@ -171,10 +183,19 @@ func (m *model) View() string {
 		stats = "\nPress Enter when done. ESC/CTRL+C to quit"
 	}
 
+	content := sentenceBox + "\n\n" + inputBox + "\n" + stats
 
-	return sentenceBox + "\n\n" + inputBox + "\n" + stats
+	if m.width > 0 && m.height > 0 {
+		centered := lipgloss.Place(
+			m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			content,
+		)
+		return centered
+	}
+
+	return content
 }
-
 
 func calculateAccuracy(original, input string) float64 {
 	original = strings.TrimSpace(original)
@@ -197,7 +218,6 @@ func calculateAccuracy(original, input string) float64 {
 func calculateWPM(charCount int, duration time.Duration) float64 {
 	words := float64(charCount) / 5.0
 	minutes := duration.Minutes()
-
 
 	if minutes == 0 {
 		return 0

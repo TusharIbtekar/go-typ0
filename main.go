@@ -7,12 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command {
-	Use: "typ0",
+var rootCmd = &cobra.Command{
+	Use:   "typ0",
+	Short: "A CLI typing practice tool",
+	Long:  `A interactive CLI tool for typing practice.`,
 }
 
 func init() {
-	rootCmd.AddCommand(practiceCmd)
+	rootCmd.AddCommand(raceCmd)
 }
 
 func main() {
