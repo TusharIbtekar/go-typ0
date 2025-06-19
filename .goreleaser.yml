@@ -39,6 +39,12 @@ brews:
     commit_author:
       name: github-actions[bot]
       email: github-actions[bot]@users.noreply.github.com
+    post_install: |
+      puts "🏁 Welcome to Typ0!"
+      puts "Start typing: typ0 race"
+      puts "Show help: typ0 --help"
+      puts ""
+      puts "Happy typing! 🎯"
 
 checksum:
   name_template: "checksums.txt"
