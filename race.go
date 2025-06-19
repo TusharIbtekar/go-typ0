@@ -17,6 +17,7 @@ import (
 var wordCount int
 var raceCmd = &cobra.Command{
 	Use: "race",
+	Aliases: []string{"r", "type", "practice"},
 	Short: "Start a typing race",
 	Long:  `Start a typing race with random sentences. Race against time to improve your typing speed!`,
 	Run: func(cmd *cobra.Command, args []string) {
