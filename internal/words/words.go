@@ -1,6 +1,6 @@
-package main
+package words
 
-var words = []string{
+var Words = []string{
 	// Common words
 	"the", "be", "to", "of", "and", "a", "in", "that", "have", "I",
 	"it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
@@ -25,13 +25,6 @@ var words = []string{
 	"redis", "elasticsearch", "kafka", "rabbitmq", "nginx", "apache", "linux", "windows", "macos", "android",
 	"ios", "mobile", "desktop", "laptop", "tablet", "smartphone", "wireless", "bluetooth", "wifi", "ethernet",
 	"router", "switch", "firewall", "encryption", "authentication", "authorization", "security", "privacy", "backup", "recovery",
-
-	// Colors
-	"red", "orange", "yellow", "green", "blue", "purple", "pink", "brown", "black", "white",
-	"gray", "grey", "silver", "gold", "bronze", "copper", "maroon", "navy", "teal", "turquoise",
-	"lime", "olive", "coral", "salmon", "peach", "lavender", "violet", "indigo", "magenta", "cyan",
-	"beige", "cream", "ivory", "tan", "khaki", "burgundy", "crimson", "scarlet", "ruby", "emerald",
-	"jade", "sapphire", "diamond", "pearl", "amber", "topaz", "garnet", "amethyst", "opal", "quartz",
 
 	// Programming keywords and syntax
 	"function", "class", "method", "variable", "constant", "string", "integer", "boolean", "array", "object",

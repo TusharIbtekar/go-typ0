@@ -7,7 +7,7 @@ A interactive CLI tool for typing practice and speed tests built with Go and Bub
 
 ## Features
 
-- **Interactive TUI** - Minimal terminal interface with real-time feedback
+- **Interactive TUI** - Minimalistic terminal interface with real-time feedback
 - **Statistics** - WPM and accuracy tracking
 - **Mistype Analysis** - Shows which keys you struggle with most
 - **Random Sentences** - Practice with different content every time
@@ -36,7 +36,7 @@ Visit [Releases](https://github.com/TusharIbtekar/go-typ0/releases) and download
 ```bash
 git clone https://github.com/TusharIbtekar/go-typ0.git
 cd go-typ0
-go build
+go build ./cmd/typ0
 ./typ0 race
 ```
 
@@ -101,7 +101,7 @@ typ0 race --help
 git clone https://github.com/TusharIbtekar/go-typ0.git
 cd go-typ0
 go mod download
-go build
+go build ./cmd/typ0
 ```
 
 ## Contributing
