@@ -1,6 +1,6 @@
 # Typ0 - CLI Typing Practice Tool
 
-A interactive CLI tool for typing practice and speed tests built with Go and Bubble Tea.
+An interactive CLI tool for typing practice and speed tests built with Go and Bubble Tea.
 
 ![Typ0 Demo](https://img.shields.io/badge/Go-1.21+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
@@ -80,6 +80,8 @@ typ0 race --help
 - **Bottom Box**: Shows your current input with blinking cursor
 - **Stats Section**: Displays results and mistype analysis
 - **Centered Layout**: Automatically adapts to your terminal size
+
+<img width="500" alt="SCR-20250619-uaow" src="https://github.com/user-attachments/assets/5c957927-47f1-4ea9-a988-c5208053f9bd" />
 
 ## Understanding Results
 
