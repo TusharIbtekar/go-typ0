@@ -41,6 +41,10 @@ func (vm *ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch key.Type {
 			case tea.KeyCtrlC, tea.KeyEsc:
 				return vm, tea.Quit
+			case tea.KeyRunes:
+				if len(key.Runes) == 1 && key.Runes[0] == 'q' {
+					return vm, tea.Quit
+				}
 			case tea.KeyEnter:
 				vm.model.Restart()
 				return vm, nil
@@ -139,6 +143,6 @@ func (vm *ViewModel) renderFinishedStats(stats Stats) string {
 		statsLines = append(statsLines, mistypedStr)
 	}
 
-	statsLines = append(statsLines, vm.styles.LabelStyle.Render("Press Enter to restart. ESC/CTRL+C to quit"))
+	statsLines = append(statsLines, vm.styles.LabelStyle.Render("Press Enter to restart. ESC/CTRL+C/Q to quit"))
 	return vm.styles.StatsBoxStyle.Render(strings.Join(statsLines, "\n"))
 } 
