@@ -18,6 +18,8 @@ type Model struct {
 	width     int
 	height    int
 	wordCount int
+	totalKeystrokes int
+	correctKeystrokes int
 }
 
 func NewModel(wordCount int) *Model {
@@ -33,6 +35,8 @@ func (m *Model) Init() {
 	m.sentence = m.generateRandomSentence()
 	m.finished = false
 	m.input = ""
+	m.totalKeystrokes = 0
+	m.correctKeystrokes = 0
 }
 
 func (m *Model) GetStats() Stats {
@@ -61,13 +65,17 @@ func (m *Model) HandleInput(input string) {
 	if len(input) == 1 && len(m.input) < len(m.sentence) {
 		expected := string(m.sentence[len(m.input)])
 		
+		m.totalKeystrokes++
+		
 		if expected == "\n" {
 			m.input += expected
+			m.correctKeystrokes++
 		} else if input != expected {
 			m.mistyped[rune(expected[0])]++
 			m.input += input
 		} else {
 			m.input += input
+			m.correctKeystrokes++
 		}
 		
 		if len(m.input) == len(m.sentence) {
@@ -79,6 +87,7 @@ func (m *Model) HandleInput(input string) {
 func (m *Model) HandleBackspace() {
 	if len(m.input) > 0 {
 		m.input = m.input[:len(m.input)-1]
+		m.totalKeystrokes++
 	}
 }
 
@@ -141,21 +150,11 @@ func (m *Model) wrapText(text string, maxWidth int) string {
 }
 
 func (m *Model) calculateAccuracy() float64 {
-	original := strings.TrimSpace(m.sentence)
-	input := strings.TrimSpace(m.input)
-
-	if len(original) == 0 || len(input) == 0 {
+	if m.totalKeystrokes == 0 {
 		return 0
 	}
-
-	correct := 0
-	minLen := min(len(original), len(input))
-	for i := 0; i < minLen; i++ {
-		if original[i] == input[i] {
-			correct++
-		}
-	}
-	return float64(correct) / float64(minLen) * 100
+	
+	return float64(m.correctKeystrokes) / float64(m.totalKeystrokes) * 100
 }
 
 func (m *Model) calculateWPM(duration time.Duration) float64 {
